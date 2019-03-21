@@ -12,7 +12,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
 object RockControlActor {
-  case object GetWebsocketFlow
+  case object GetControlFlow
   case class SpaceRock(name : String, color: String, size : Float, speed : Int, deltaX : Int, deltaY : Int)
   case class UpdateResponse(message : String)
   def props(id: Int, topic : String): Props = Props(new RockControlActor(id, topic))
@@ -39,16 +39,15 @@ class RockControlActor(id : Int, topic : String) extends Actor with ActorLogging
   private var rock : Option[SpaceRock] = None
 
 
-  val (down, publisher) = Source
+  val publisher = Source
     .actorRef[String](1000, OverflowStrategy.fail)
-    .toMat(Sink.asPublisher(fanout = false))(Keep.both)
+    .toMat(Sink.asPublisher(fanout = false))(Keep.right)
     .run()
-
 
 
   def receive = {
 
-    case GetWebsocketFlow =>
+    case GetControlFlow =>
 
       val flow = Flow.fromGraph(GraphDSL.create() { implicit b =>
 
@@ -71,7 +70,7 @@ class RockControlActor(id : Int, topic : String) extends Actor with ActorLogging
           .map(_.toJson.toString())
         )
 
-        //TODO may need to look into a better on complete response
+        //TODO may need to look into a better OnComplete response
         val pubSink = Flow[SpaceRock].map(Publish(topic, _)).to(Sink.actorRef(mediator, onCompleteMessage = "done"))
         val publish = b.add(pubSink)
 

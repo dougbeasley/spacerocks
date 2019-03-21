@@ -9,9 +9,10 @@ import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Flow
 import akka.util.Timeout
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
-import com.spacerocks.RockControlActor.GetWebsocketFlow
+import com.spacerocks.RockControlActor.GetControlFlow
 import com.typesafe.config.ConfigFactory
 import akka.pattern.ask
+import com.spacerocks.RockListenerActor.GetListenerFlow
 
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
@@ -29,7 +30,7 @@ object SpaceRocks extends App {
   implicit val executionContext = system.dispatcher
 
   val clusterListener = system.actorOf(Props[ClusterListener], name = "clusterListener")
-  val subscriber = system.actorOf(RockSubscriberActor.props(SpaceRockTopic))
+  val subscriber = system.actorOf(RockListenerActor.props(SpaceRockTopic))
 
   def actorFlow(ref : ActorRef): Flow[Message, Message, Any] = Flow[Message].ask[Message](ref)
 
@@ -38,7 +39,7 @@ object SpaceRocks extends App {
     path("control") {
 
       val handler = system.actorOf(RockControlActor.props(0, SpaceRockTopic))
-      val futureFlow = (handler ? GetWebsocketFlow) (3.seconds).mapTo[Flow[Message, Message, _]]
+      val futureFlow = (handler ? GetControlFlow) (3.seconds).mapTo[Flow[Message, Message, _]]
 
       onComplete(futureFlow) {
         case Success(flow) => handleWebSocketMessages(flow)
@@ -46,8 +47,14 @@ object SpaceRocks extends App {
       }
     } ~
     path("listen") {
-      val subscriberActor = system.actorOf(Props[RockSubscriberActor])
-      handleWebSocketMessages(actorFlow(subscriberActor))
+
+      val handler = system.actorOf(RockListenerActor.props(SpaceRockTopic))
+      val futureFlow = (handler ? GetListenerFlow) (3.seconds).mapTo[Flow[Message, Message, _]]
+
+      onComplete(futureFlow) {
+        case Success(flow) => handleWebSocketMessages(flow)
+        case Failure(err) => complete(err.toString)
+      }
     } ~
     path("health") {
       get {
