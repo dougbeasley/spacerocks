@@ -13,7 +13,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object RockControlActor {
   case object GetControlFlow
-  case class SpaceRock(name : String, color: String, size : Float, speed : Int, deltaX : Int, deltaY : Int)
+  case class SpaceRock(id : String, name : String, color: String, size : Float, speed : Int, deltaX : Int, deltaY : Int)
   case class UpdateResponse(message : String)
   def props(id: Int, topic : String): Props = Props(new RockControlActor(id, topic))
 }

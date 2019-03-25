@@ -6,7 +6,7 @@ import spray.json.DefaultJsonProtocol
 
 trait SpaceRockProtocol extends SprayJsonSupport with DefaultJsonProtocol {
 
-  implicit val rockFormat = jsonFormat6(SpaceRock.apply)
+  implicit val rockFormat = jsonFormat7(SpaceRock.apply)
   implicit val responseFormat = jsonFormat1(UpdateResponse.apply)
 
 }
