@@ -13,10 +13,12 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-stream" % akkaVersion,
   "com.typesafe.akka" %% "akka-cluster" % akkaVersion,
   "com.typesafe.akka" %% "akka-cluster-tools" % akkaVersion,
-  
+  "com.typesafe.akka" %% "akka-discovery" % akkaVersion,
+
   "com.typesafe.akka" %% "akka-http"   % akkaHttpVersion,
   "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
 
+  "com.lightbend.akka.management" %% "akka-management-cluster-bootstrap" % "1.0.0",
   "ch.megard" %% "akka-http-cors" % "0.4.0",
 
   "org.scalatest" %% "scalatest" % "3.0.5" % "test"
