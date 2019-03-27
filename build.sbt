@@ -24,13 +24,30 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.0.5" % "test"
 )
 
-version in Docker := "latest"
 
-dockerExposedPorts in Docker := Seq(1600)
-
-dockerEntrypoint in Docker := Seq("sh", "-c", "bin/clustering $*")
-
-dockerRepository := Some("lightbend")
-
-dockerBaseImage := "java"
 enablePlugins(JavaAppPackaging)
+
+packageName in Docker := packageName.value
+
+version in Docker := version.value
+
+import com.typesafe.sbt.packager.docker._
+
+daemonUserUid in Docker := None
+daemonUser in Docker    := "daemon"
+
+dockerCommands :=
+  dockerCommands.value.flatMap {
+    case ExecCmd("ENTRYPOINT", args @ _*) => Seq(Cmd("ENTRYPOINT", args.mkString(" ")))
+    case v => Seq(v)
+  }
+
+
+dockerExposedPorts := Seq(8080, 8558, 2552)
+dockerBaseImage := "openjdk:8-jre-alpine"
+
+dockerCommands ++= Seq(
+  Cmd("USER", "root"),
+  Cmd("RUN", "/sbin/apk", "add", "--no-cache", "bash", "bind-tools", "busybox-extras", "curl", "strace"),
+  Cmd("RUN", "chgrp -R 0 . && chmod -R g=u .")
+)
