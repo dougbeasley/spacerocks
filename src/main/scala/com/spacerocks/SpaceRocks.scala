@@ -8,60 +8,39 @@ import akka.http.scaladsl.model.{ContentTypes, HttpEntity}
 import akka.http.scaladsl.server.Directives._
 import akka.management.cluster.bootstrap.ClusterBootstrap
 import akka.management.scaladsl.AkkaManagement
+import akka.pattern.ask
 import akka.stream.ActorMaterializer
 import akka.stream.scaladsl.Flow
 import akka.util.Timeout
 import ch.megard.akka.http.cors.scaladsl.CorsDirectives._
 import com.spacerocks.RockControlActor.GetControlFlow
-import com.typesafe.config.{Config, ConfigFactory}
-import akka.pattern.ask
 import com.spacerocks.RockListenerActor.GetListenerFlow
 
 import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
 
-object Rock1 extends App {
-  new SpaceRocks(1)
-}
+object SpaceRocks extends App {
 
-object Rock2 extends App {
-  new SpaceRocks(2)
-}
+  import system.log
 
-object Rock3 extends App {
-  new SpaceRocks(3)
-}
-
-class SpaceRocks(nr : Int) {
-
-  implicit val askTimeout = Timeout(5.seconds)
-
-//  val config = ConfigFactory.load()
-//  val clusterName = config.getString("clustering.cluster.name")
   val SpaceRockTopic = "space-rocks"
 
-  val config: Config = ConfigFactory.parseString(s"""
-      akka.remote.artery.canonical.hostname = "127.0.0.$nr"
-      akka.management.http.hostname = "127.0.0.$nr"
-    """).withFallback(ConfigFactory.load())
-  val system = ActorSystem("space-rocks", config)
-
-  AkkaManagement(system).start()
-
-  ClusterBootstrap(system).start()
-
-  Cluster(system).registerOnMemberUp({
-    system.log.info("Cluster is up!")
-  })
-
+  implicit val system = ActorSystem("space-rocks")
   implicit val materializer = ActorMaterializer()
   implicit val executionContext = system.dispatcher
+
+  val cluster = Cluster(system)
+
+  log.info(s"Started [$system], cluster.selfAddress = ${cluster.selfAddress}")
+
+  AkkaManagement(system).start()
+  ClusterBootstrap(system).start()
 
   val clusterListener = system.actorOf(Props[ClusterListener], name = "clusterListener")
   val subscriber = system.actorOf(RockListenerActor.props(SpaceRockTopic))
 
-
+  implicit val askTimeout = Timeout(5.seconds)
   //TODO Move http stuff to a different file
   def actorFlow(ref : ActorRef): Flow[Message, Message, Any] = Flow[Message].ask[Message](ref)
 
@@ -93,5 +72,9 @@ class SpaceRocks(nr : Int) {
     }
 
   val bindingFuture = Http().bindAndHandle(cors() {route}, "0.0.0.0", 8080)
+
+  Cluster(system).registerOnMemberUp({
+    log.info("Cluster member is up!")
+  })
 
 }
