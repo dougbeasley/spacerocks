@@ -1,0 +1,109 @@
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: space-rocks-ns
+  namespace: "space-rocks-ns"
+  labels:
+    app: space-rocks
+---
+apiVersion: "apps/v1beta2"
+kind: Deployment
+metadata:
+  name: space-rocks
+  namespace: space-rocks-ns
+  labels:
+    app: space-rocks
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: space-rocks
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+    type: RollingUpdate
+
+  template:
+    metadata:
+      labels:
+        app: space-rocks
+    spec:
+      restartPolicy: Always
+      containers:
+      - name: space-rocks
+        image: "space-rocks:1.0"
+        imagePullPolicy: Never
+        #health
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: management
+        livenessProbe:
+          httpGet:
+            path: /alive
+            port: management
+        #health
+        ports:
+        - containerPort: 8558
+          name: management
+        - containerPort: 2552
+          name: remoting
+        env:
+        # Can be removed once async-dns supports search domains (in Akka 2.5.20)
+        - name: NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        # The DNS-based discovery will use this service name to look for the headless
+        # service defined below
+        - name: AKKA_CLUSTER_BOOTSTRAP_SERVICE_NAME
+          value: "kubernetes-dns-internal"
+
+---
+#headless
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: space-rocks
+  annotations:
+    service.alpha.kubernetes.io/tolerate-unready-endpoints: "true"
+  name: "kubernetes-dns-internal"
+  namespace: space-rocks-ns
+spec:
+  ports:
+  - name: management
+    port: 8558
+    protocol: TCP
+    targetPort: 8558
+  - name: remoting
+    port: 2552
+    protocol: TCP
+    targetPort: 2552
+  selector:
+    app: space-rocks
+  clusterIP: None
+  publishNotReadyAddresses: true
+#headless
+---
+#public
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: space-rocks
+  name: "kubernetes-dns"
+  namespace: space-rocks-ns
+spec:
+  ports:
+  - name: http
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: "space-rocks"
+  type: LoadBalancer
+#public
