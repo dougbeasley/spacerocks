@@ -6,7 +6,7 @@ steps:
   dir: 'target/docker/stage'
 - name: 'gcr.io/cloud-builders/kubectl'
   args: ['set', 'image', 'deployment', 'space-rocks', 'space-rocks=gcr.io/$PROJECT_ID/space-rocks:latest']
-  env: ['CLOUDSDK_COMPUTE_ZONE=us-central1-a','CLOUDSDK_CONTAINER_CLUSTER=space-rocks-cluster']
+  env: ['CLOUDSDK_COMPUTE_REGION=us-central1','CLOUDSDK_CONTAINER_CLUSTER=space-rocks-cluster']
 
 
 #images: ['gcr.io/$PROJECT_ID/space-rocks']
