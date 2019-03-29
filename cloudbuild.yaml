@@ -7,8 +7,8 @@ steps:
 - name: 'gcr.io/cloud-builders/kubectl'
   args: ['set', 'image', 'deployment', 'space-rocks', 'space-rocks=gcr.io/$PROJECT_ID/space-rocks:latest']
   env:
-  - 'CLOUDSDK_COMPUTE_REGION=${_CLOUDSDK_COMPUTE_REGION}'
-  - 'CLOUDSDK_CONTAINER_CLUSTER=${_CLOUDSDK_CONTAINER_CLUSTER}'
+  - 'CLOUDSDK_COMPUTE_REGION=us-central1'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=space-rocks-cluster'
 
 
 #images: ['gcr.io/$PROJECT_ID/space-rocks']
