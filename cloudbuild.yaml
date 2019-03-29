@@ -2,6 +2,18 @@ steps:
 - name: 'gcr.io/$PROJECT_ID/scala-sbt'
   args: ['clean', 'docker:stage']
 - name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '--tag=gcr.io/$PROJECT_ID/space-rocks', '.']
+  args: ['build', '--tag=gcr.io/$PROJECT_ID/space-rocks:$BUILD_ID', '.']
   dir: 'target/docker/stage'
-images: ['gcr.io/$PROJECT_ID/space-rocks']
+- name: 'gcr.io/cloud-builders/kubectl'
+  args:
+  - set
+  - image
+  - deployment
+  - space-rocks
+  - web=gcr.io/$PROJECT_ID/space-rocks:$BUILD_ID
+  env:
+  - 'CLOUDSDK_COMPUTE_REGION=$_CLOUDSDK_COMPUTE_REGION'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=$_CLOUDSDK_CONTAINER_CLUSTER'
+
+
+#images: ['gcr.io/$PROJECT_ID/space-rocks']

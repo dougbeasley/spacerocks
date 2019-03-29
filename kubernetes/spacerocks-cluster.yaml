@@ -34,8 +34,8 @@ spec:
       restartPolicy: Always
       containers:
       - name: space-rocks
-        image: "space-rocks:1.0"
-        imagePullPolicy: Never
+        image: "space-rocks:latest"
+        imagePullPolicy: Always
         #health
         readinessProbe:
           httpGet:
