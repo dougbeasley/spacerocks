@@ -35,7 +35,7 @@ spec:
       containers:
       - name: space-rocks
         image: "space-rocks:latest"
-        imagePullPolicy: Always
+        imagePullPolicy: IfNotPresent
         #health
         readinessProbe:
           httpGet:
@@ -63,7 +63,7 @@ spec:
           value: "kubernetes-dns-internal"
 
 ---
-#headless
+#management
 apiVersion: v1
 kind: Service
 metadata:
@@ -87,23 +87,44 @@ spec:
     app: space-rocks
   clusterIP: None
   publishNotReadyAddresses: true
-#headless
+
+#---
+#api service config
+#apiVersion: cloud.google.com/v1beta1
+#kind: BackendConfig
+#metadata:
+#  name: space-rocks-config
+#spec:
+#  timeoutSec: 40
+#  connectionDraining:
+#    drainingTimeoutSec: 60
+#
 ---
-#public
+#api service
 apiVersion: v1
 kind: Service
 metadata:
+  name: space-rocks-service
+  namespace: space-rocks-ns
   labels:
     app: space-rocks
-  name: "kubernetes-dns"
+spec:
+  type: NodePort
+  selector:
+    app: space-rocks
+  ports:
+  - protocol: TCP
+    port: 8080
+---
+#ingress
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  labels:
+    app: space-rocks
+  name: "space-rocks-ingress"
   namespace: space-rocks-ns
 spec:
-  ports:
-  - name: http
-    port: 8080
-    protocol: TCP
-    targetPort: 8080
-  selector:
-    app: "space-rocks"
-  type: LoadBalancer
-#public
+  backend:
+    serviceName: space-rocks-service
+    servicePort: 8080

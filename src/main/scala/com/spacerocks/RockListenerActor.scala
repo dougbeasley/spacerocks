@@ -2,16 +2,13 @@ package com.spacerocks
 
 import akka.actor.{Actor, ActorLogging, Props}
 import akka.cluster.pubsub.DistributedPubSub
-import akka.cluster.pubsub.DistributedPubSubMediator.Publish
 import akka.http.scaladsl.model.ws.{BinaryMessage, Message, TextMessage}
-import akka.http.scaladsl.unmarshalling.Unmarshal
+import akka.stream.scaladsl.{Flow, GraphDSL, Keep, Sink, Source}
 import akka.stream.{ActorMaterializer, FlowShape, OverflowStrategy}
-import akka.stream.scaladsl.{Broadcast, Flow, GraphDSL, Keep, Sink, Source}
-import com.spacerocks.RockControlActor.{SpaceRock, UpdateResponse}
-
-import scala.concurrent.{ExecutionContext, Future}
+import com.spacerocks.RockControlActor.SpaceRock
 
 import scala.concurrent.duration._
+import scala.concurrent.{ExecutionContext, Future}
 
 object RockListenerActor {
   case object GetListenerFlow
@@ -21,10 +18,10 @@ object RockListenerActor {
 
 class RockListenerActor(topic : String) extends Actor with ActorLogging with SpaceRockProtocol {
 
-  import akka.cluster.pubsub.DistributedPubSubMediator.{ Subscribe, SubscribeAck }
-  import RockListenerActor._
-  import spray.json._
   import GraphDSL.Implicits._
+  import RockListenerActor._
+  import akka.cluster.pubsub.DistributedPubSubMediator.{Subscribe, SubscribeAck}
+  import spray.json._
 
   implicit val as = context.system
   implicit val am = ActorMaterializer()
@@ -69,6 +66,7 @@ class RockListenerActor(topic : String) extends Actor with ActorLogging with Spa
 
     case SubscribeAck(Subscribe(`topic`, None, `self`)) ⇒
       log.info("subscribing")
+
   }
 }
 

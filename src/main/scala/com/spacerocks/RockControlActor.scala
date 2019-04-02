@@ -34,7 +34,7 @@ class RockControlActor(id : Int, topic : String) extends Actor with ActorLogging
   implicit val ec: ExecutionContext = context.dispatcher
   implicit val timeout: FiniteDuration = 5.seconds
 
-  context.setReceiveTimeout(2 minutes)
+  context.setReceiveTimeout(5 minutes)
 
   private var rock : Option[SpaceRock] = None
 
